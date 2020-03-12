@@ -42,37 +42,50 @@ public class ListBooks extends SlingSafeMethodsServlet {
          */
         
         try {
-            
             response.setContentType("application/json");
             PrintWriter wrt = response.getWriter();
             Session jcrSession = repository.loginAdministrative(null);
             Node rootNode = jcrSession.getRootNode();
             Node booksNode = rootNode.getNode("books");
-            Node fictionNode = booksNode.getNode("fiction");
-            Node nonFictionNode = booksNode.getNode("nonfiction");
-            
-            NodeIterator fictionBooks = fictionNode.getNodes();
-            NodeIterator nonFictionBooks = nonFictionNode.getNodes();
             
             JsonWriter writer = new JsonWriter(wrt);
             writer.beginArray();
-            while(fictionBooks.hasNext()) {
-                Node childBook = fictionBooks.nextNode();
-                writer.beginObject();
-                writer.name("title").value(childBook.getProperty("title").getString());
-                writer.name("author").value(childBook.getProperty("author").getString());
-                writer.name("genre").value(childBook.getParent().getName());
-                writer.name("path").value(childBook.getPath());
-                writer.endObject();
+            NodeIterator genre = booksNode.getNodes();
+            
+            while (genre.hasNext()) {
+                Node genreChild = genre.nextNode();
+                NodeIterator childIter;
+                if (request.getParameter("title") == null) {
+                    childIter = genreChild.getNodes();
+                } else {
+                    childIter = genreChild.getNodes(request.getParameter("title") + "*");
+                }
+                
+                while(childIter.hasNext()) {
+                    Node book = childIter.nextNode();
+                    if (request.getParameter("author") != null) {
+                        if (book.getProperty("author").getString().contains(request.getParameter("author"))) {
+                            writer.beginObject();
+                            writer.name("title").value(book.getProperty("title").getString());
+                            writer.name("author").value(book.getProperty("author").getString());
+                            writer.name("genre").value(book.getParent().getName());
+                            writer.name("path").value(book.getPath());
+                            writer.endObject();
+                        }
+                    } else {
+                        writer.beginObject();
+                        writer.name("title").value(book.getProperty("title").getString());
+                        writer.name("author").value(book.getProperty("author").getString());
+                        writer.name("genre").value(book.getParent().getName());
+                        writer.name("path").value(book.getPath());
+                        writer.endObject();
+                    }
+                } 
             }
             jcrSession.save();
             writer.endArray();
             writer.close();
             wrt.close();
-            
-            
-            
-            
             
         } catch (Exception ex) {
             throw new RuntimeException ("Following Exception tok place: " + ex); 
