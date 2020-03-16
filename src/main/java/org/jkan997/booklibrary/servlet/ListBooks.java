@@ -1,12 +1,14 @@
 package org.jkan997.booklibrary.servlet;
 
 import com.google.gson.stream.JsonWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.servlet.Servlet;
 import org.osgi.service.component.annotations.Component;
@@ -47,7 +49,6 @@ public class ListBooks extends SlingSafeMethodsServlet {
             Session jcrSession = repository.loginAdministrative(null);
             Node rootNode = jcrSession.getRootNode();
             Node booksNode = rootNode.getNode("books");
-            
             JsonWriter writer = new JsonWriter(wrt);
             writer.beginArray();
             NodeIterator genre = booksNode.getNodes();
@@ -65,20 +66,10 @@ public class ListBooks extends SlingSafeMethodsServlet {
                     Node book = childIter.nextNode();
                     if (request.getParameter("author") != null) {
                         if (book.getProperty("author").getString().contains(request.getParameter("author"))) {
-                            writer.beginObject();
-                            writer.name("title").value(book.getProperty("title").getString());
-                            writer.name("author").value(book.getProperty("author").getString());
-                            writer.name("genre").value(book.getParent().getName());
-                            writer.name("path").value(book.getPath());
-                            writer.endObject();
+                            printNode(book, writer);
                         }
                     } else {
-                        writer.beginObject();
-                        writer.name("title").value(book.getProperty("title").getString());
-                        writer.name("author").value(book.getProperty("author").getString());
-                        writer.name("genre").value(book.getParent().getName());
-                        writer.name("path").value(book.getPath());
-                        writer.endObject();
+                        printNode(book, writer);
                     }
                 } 
             }
@@ -92,6 +83,19 @@ public class ListBooks extends SlingSafeMethodsServlet {
         }
         
         throw new RuntimeException("" + getClass().getCanonicalName() + " not implemented yet.");
+    }
+    
+    private void printNode(Node book, JsonWriter writer) throws IOException, RepositoryException {
+        
+        writer.beginObject();
+        writer.name("title").value(book.getProperty("title").getString());
+        writer.name("author").value(book.getProperty("author").getString());
+        writer.name("genre").value(book.getParent().getName());
+        writer.name("path").value(book.getPath());
+        if (book.hasProperty("reserved"))
+            writer.name("reserved").value(book.getProperty("reserved").getString());
+        writer.endObject();
+        
     }
 
 }
