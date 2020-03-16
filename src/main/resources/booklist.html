@@ -1,4 +1,18 @@
 <!DOCTYPE html>
 <html data-sly-use.page="org.jkan997.booklibrary.htl.BooklistModel">
-    ${page.date}
+    <style>
+        body {
+            margin: 80px;
+        }
+        li {
+            padding-left: 30px;
+            padding-bottom: 15px;
+        }
+    </style>
+    <h1>List of Books in the Library!</h1>
+    <p>As of: ${page.date}</p>
+    <br>
+    <ul data-sly-list="${page.book}" data-sly-unwrap>
+        <li>${item.title} By ${item.author}</li>
+    </ul>
 </html>
